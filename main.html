@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="appcontainer">
+        <header id="presentationcontainer">
+            <h1 id="dynamicTitle">Bienvenido</h1>
+            <input type="number" id="inputNumber" aria-label="Cantidad" placeholder="#habitacion" />
+        </header>       
+    </div>
+
+    <section id="tablecontainer">
+        <table id="tab">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Producto</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </section>
+
+    <!-- Open Add Product Modal -->
+    <button id="openAddPopup">Agregar Producto</button>
+
+    <!-- Add Product Modal -->
+    <div id="addPopupContainer" class="popup">
+        <div class="popup-content">
+            <span id="closeAddPopup">&times;</span>
+            <h2>Agregar Producto</h2>
+            <input type="text" id="addProductName" placeholder="Nombre del producto" />
+            <button id="addRowButton">Añadir</button>
+        </div>
+    </div>
+
+    <!-- Open Remove Product Modal -->
+    <button id="openRemovePopup">Eliminar Producto</button>
+
+    <!-- Remove Product Modal -->
+    <div id="removePopupContainer" class="popup">
+        <div class="popup-content">
+            <span id="closeRemovePopup">&times;</span>
+            <h2>Eliminar Producto</h2>
+            <input type="text" id="removeProduct" placeholder="Id" />
+            <button id="removeRowButton">Eliminar</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Tu Empresa</p>
+    </footer>
+
+    <script>
+        // Select elements
+        let inputField = document.getElementById("inputNumber");
+        let titleElement = document.getElementById("dynamicTitle");
+        let tableContainer = document.getElementById("tablecontainer");
+        let addButton = document.getElementById("openAddPopup");
+        let removeButton = document.getElementById("openRemovePopup");
+        let tableBody = document.getElementById("tableBody");
+
+        // Function to check input value and toggle visibility
+        inputField.addEventListener("input", function () {
+            let value = parseInt(inputField.value, 10);
+
+            if (value > 0) {
+                tableContainer.style.display = "block";
+                addButton.style.display = "block";
+                removeButton.style.display = "block";
+                titleElement.textContent = `Habitación: ${value}`; // Update title
+                loadData(value); // Load stored data
+            } else {
+                tableContainer.style.display = "none";
+                addButton.style.display = "none";
+                removeButton.style.display = "none";
+                titleElement.textContent = "Bienvenido"; // Reset title
+                tableBody.innerHTML = ""; // Clear table
+            }
+        });
+
+        // Open & close popups
+        function openPopup(popupId) {
+            document.getElementById(popupId).style.display = "flex";
+        }
+
+        function closePopup(popupId) {
+            document.getElementById(popupId).style.display = "none";
+        }
+
+        document.getElementById("openAddPopup").addEventListener("click", () => openPopup("addPopupContainer"));
+        document.getElementById("closeAddPopup").addEventListener("click", () => closePopup("addPopupContainer"));
+        document.getElementById("openRemovePopup").addEventListener("click", () => openPopup("removePopupContainer"));
+        document.getElementById("closeRemovePopup").addEventListener("click", () => closePopup("removePopupContainer"));
+
+        // Add row function with local storage
+        document.getElementById("addRowButton").addEventListener("click", function () {
+            let habitacion = inputField.value;
+            let productName = document.getElementById("addProductName").value.trim();
+            if (!habitacion || !productName) return;
+
+            let rowData = {
+                id: `${habitacion}-${Date.now()}`, // ✅ Unique ID based on habitacion + timestamp
+                producto: productName,
+                cantidad: habitacion,
+                fecha: new Date().toLocaleTimeString()
+            };
+
+            let storedData = JSON.parse(localStorage.getItem(`habitacion-${habitacion}`)) || [];
+            storedData.push(rowData);
+            localStorage.setItem(`habitacion-${habitacion}`, JSON.stringify(storedData));
+
+            addRowToTable(rowData);
+            closePopup("addPopupContainer"); // Close modal
+        });
+
+        // Function to add a row to the table
+        function addRowToTable(rowData) {
+            let newRow = document.createElement("tr");
+            newRow.innerHTML = `
+                <td>${rowData.id}</td>
+                <td>${rowData.producto}</td>
+                <td>${rowData.fecha}</td>
+            `;
+            tableBody.appendChild(newRow);
+        }
+
+        // Load data from local storage
+        function loadData(habitacion) {
+            let storedData = JSON.parse(localStorage.getItem(`habitacion-${habitacion}`)) || [];
+            tableBody.innerHTML = ""; // Clear table first
+            storedData.forEach(rowData => addRowToTable(rowData));
+        }
+
+        // Remove row function
+        document.getElementById("removeRowButton").addEventListener("click", function () {
+            let productToRemove = document.getElementById("removeProduct").value.trim();
+            let habitacion = inputField.value.trim();
+            
+            if (!productToRemove || !habitacion) return;
+
+            let storedData = JSON.parse(localStorage.getItem(`habitacion-${habitacion}`)) || [];
+            let updatedData = storedData.filter(row => row.id !== productToRemove);
+
+            if (storedData.length === updatedData.length) {
+                alert("Producto no encontrado");
+                return;
+            }
+
+            localStorage.setItem(`habitacion-${habitacion}`, JSON.stringify(updatedData));
+            loadData(habitacion); // Refresh table
+            closePopup("removePopupContainer"); // Close modal
+        });
+    </script>
+</body>
+</html>
